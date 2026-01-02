@@ -1,0 +1,48 @@
+# schema_registry_client
+
+`schema_registry_client` is a library to interact with the Confluent Schema Registry using Google Protobuf. It is inspired by and based off of [avro_turf](https://github.com/dasch/avro_turf).
+
+## Installation
+
+Add this line to your application's Gemfile:
+
+```ruby
+gem 'schema_registry_client'
+```
+
+And then execute:
+
+    $ bundle
+
+Or install it yourself as:
+
+    $ gem install schema_registry_client
+
+## Usage
+
+SchemaRegistry interacts with the Confluent Schema Registry, and caches all results. When you first encode a message, it will register the message and all dependencies with the Schema Registry. When decoding, it will look up the schema in the Schema Registry and use the associated local generated code to decode the message.
+
+Example usage:
+
+```ruby
+require 'schema_registry_client'
+
+schema_registry_client = SchemaRegistry.new(registry_url: 'http://localhost:8081', schema_paths: ['path/to/protos'])
+message = MyProto::MyMessage.new(field1: 'value1', field2: 42)
+encoded = schema_registry_client.encode(message, subject: 'my-subject')
+
+# Decoding
+
+decoded_proto_message = schema_registry_client.decode(encoded_string)
+```
+
+## Notes about usage
+
+* When decoding, this library does *not* attempt to fully parse the Proto definition stored on the schema registry and generate dynamic classes. Instead, it simply parses out the package and message and assumes that the reader has the message available in the descriptor pool. Any compatibility issues should be detected through normal means, i.e. just by instantiating the message and seeing if any errors are raised.
+
+### Regenerating test protos
+Run the following to regenerate:
+
+```sh
+protoc -I spec/schemas --ruby_out=spec/gen --ruby_opt=paths=source_relative spec/schemas/**/*.proto
+```
