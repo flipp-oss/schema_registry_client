@@ -9,7 +9,7 @@ Gem::Specification.new do |spec|
   spec.version = SchemaRegistry::VERSION
   spec.authors = ['Daniel Orner']
   spec.email = ['daniel.orner@flipp.com']
-  spec.summary = 'Support for Protobuf files in Confluent Schema Registry'
+  spec.summary = 'Confluent Schema Registry client with support for Avro and Protobuf'
   spec.homepage = 'https://github.com/flipp-oss/schema_registry_client'
   spec.license = 'MIT'
   spec.required_ruby_version = '>= 3.0'
