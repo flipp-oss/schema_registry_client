@@ -1,14 +1,14 @@
 # frozen_string_literal: true
 
-require 'schema_registry_client/schema/base'
-require 'schema_registry_client/output/json_schema'
+require "schema_registry_client/schema/base"
+require "schema_registry_client/output/json_schema"
 
 class SchemaRegistry
   module Schema
     class ProtoJsonSchema < Base
       class << self
         def schema_type
-          'JSON'
+          "JSON"
         end
 
         def schema_text(message, schema_name: nil)

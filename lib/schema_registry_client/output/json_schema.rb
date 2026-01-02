@@ -5,20 +5,20 @@ class SchemaRegistry
     module JsonSchema
       class << self
         def fetch(message_name)
-          name = message_name.start_with?('.') ? message_name[1..] : message_name
+          name = message_name.start_with?(".") ? message_name[1..] : message_name
           Google::Protobuf::DescriptorPool.generated_pool.lookup(name)
         end
 
         def output(descriptor, path: nil)
           properties = {}
           result = {
-            '$schema': 'https://json-schema.org/draft/2020-12/schema',
-            type: 'object',
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            type: "object",
             properties: properties
           }
           if path
             # follow path down
-            parts = path.split('.')
+            parts = path.split(".")
             field_name = parts.last
             parts[...-1].each do |part|
               field = descriptor.field.find { |f| f.name == part }
@@ -42,12 +42,12 @@ class SchemaRegistry
           if field.label == :LABEL_REPEATED && !ignore_repeated
             if klass&.options.respond_to?(:map_entry) && klass.options.map_entry
               return {
-                type: 'object',
+                type: "object",
                 additionalProperties: field_object(klass.field[1])
               }
             end
             return {
-              type: 'array',
+              type: "array",
               items: field_object(field, ignore_repeated: true)
             }
           end
@@ -57,18 +57,18 @@ class SchemaRegistry
         def field_type(field, klass)
           case field.type
           when :TYPE_INT32, :TYPE_UINT32, :TYPE_SINT32, :TYPE_FIXED32, :TYPE_SFIXED32
-            { type: 'integer' }
+            {type: "integer"}
           when :TYPE_FLOAT, :TYPE_DOUBLE
-            { type: 'number' }
+            {type: "number"}
           when :TYPE_INT64, :TYPE_UINT64, :TYPE_SINT64, :TYPE_FIXED64, :TYPE_SFIXED64, :TYPE_STRING, :TYPE_BYTES
-            { type: 'string' }
+            {type: "string"}
           when :TYPE_BOOL
-            { type: 'boolean' }
+            {type: "boolean"}
           else
             if klass.is_a?(Google::Protobuf::EnumDescriptorProto)
-              { enum: klass.to_h[:value].map { |h| h[:name] } }
+              {enum: klass.to_h[:value].map { |h| h[:name] }}
             else
-              { type: 'object' }
+              {type: "object"}
             end
           end
         end

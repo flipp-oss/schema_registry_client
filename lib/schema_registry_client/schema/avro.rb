@@ -1,16 +1,16 @@
 # frozen_string_literal: true
 
-require 'schema_registry_client/schema/base'
-require 'schema_registry_client/avro_schema_store'
+require "schema_registry_client/schema/base"
+require "schema_registry_client/avro_schema_store"
 
 class SchemaRegistry
   module Schema
     class Avro < Base
-      DEFAULT_SCHEMAS_PATH = './schemas'
+      DEFAULT_SCHEMAS_PATH = "./schemas"
 
       class << self
         def schema_type
-          'AVRO'
+          "AVRO"
         end
 
         def schema_store
@@ -26,9 +26,9 @@ class SchemaRegistry
         end
 
         def encode(message, stream, schema_name: nil)
-          validate_options = { recursive: true,
-                               encoded: false,
-                               fail_on_extra_fields: true }
+          validate_options = {recursive: true,
+                              encoded: false,
+                              fail_on_extra_fields: true}
           schema = schema_store.find(schema_name)
 
           ::Avro::SchemaValidator.validate!(schema, message, **validate_options)
@@ -48,7 +48,7 @@ class SchemaRegistry
           # Try to find the reader schema locally, fall back to writer schema
           readers_schema = begin
             schema_store.find(writers_schema.fullname)
-          rescue StandardError
+          rescue
             writers_schema
           end
 

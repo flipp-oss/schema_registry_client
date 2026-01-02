@@ -1,32 +1,32 @@
 # frozen_string_literal: true
 
-require 'google/protobuf'
-require 'google/protobuf/well_known_types'
-require 'google/protobuf/descriptor_pb'
-require 'schema_registry_client/output/proto_text'
-require 'schema_registry_client/schema/base'
-require 'schema_registry_client/wire'
+require "google/protobuf"
+require "google/protobuf/well_known_types"
+require "google/protobuf/descriptor_pb"
+require "schema_registry_client/output/proto_text"
+require "schema_registry_client/schema/base"
+require "schema_registry_client/wire"
 
 class SchemaRegistry
   module Schema
     class Protobuf < Base
       class << self
         def schema_type
-          'PROTOBUF'
+          "PROTOBUF"
         end
 
         def schema_text(message, schema_name: nil)
           file_descriptor = if message.is_a?(Google::Protobuf::FileDescriptor)
-                              message
-                            else
-                              message.class.descriptor.file_descriptor
-                            end
+            message
+          else
+            message.class.descriptor.file_descriptor
+          end
           SchemaRegistry::Output::ProtoText.output(file_descriptor.to_proto)
         end
 
         def encode(message, stream, schema_name: nil)
           _, indexes = find_index(message.class.descriptor.to_proto,
-                                  message.class.descriptor.file_descriptor.to_proto.message_type)
+            message.class.descriptor.file_descriptor.to_proto.message_type)
 
           if indexes == [0]
             SchemaRegistry::Wire.write_int(stream, 0)
@@ -60,7 +60,7 @@ class SchemaRegistry
           all_files = ObjectSpace.each_object(Google::Protobuf::FileDescriptor).to_a
           all_files.each do |file_desc|
             file_path = file_desc.name
-            next if file_path.start_with?('google/protobuf/') # skip built-in protos
+            next if file_path.start_with?("google/protobuf/") # skip built-in protos
 
             @all_schemas[file_path] = file_desc
           end
@@ -69,13 +69,13 @@ class SchemaRegistry
         def dependencies(message)
           load_schemas! unless @all_schemas&.any?
           file_descriptor = if message.is_a?(Google::Protobuf::FileDescriptor)
-                              message
-                            else
-                              message.class.descriptor.file_descriptor
-                            end
+            message
+          else
+            message.class.descriptor.file_descriptor
+          end
 
           deps = file_descriptor.to_proto.dependency.to_a
-                                .reject { |d| d.start_with?('google/protobuf/') }
+            .reject { |d| d.start_with?("google/protobuf/") }
           deps.to_h do |dep|
             dependency_schema = @all_schemas[dep]
             [dependency_schema.name, dependency_schema]
@@ -117,12 +117,12 @@ class SchemaRegistry
           descriptor = Google::Protobuf::DescriptorPool.generated_pool.lookup(full_name)
           unless descriptor
             msg = "Could not find schema for #{full_name}. " \
-                  'Make sure the corresponding .proto file has been compiled and loaded.'
+                  "Make sure the corresponding .proto file has been compiled and loaded."
             raise msg
           end
 
           path = find_descriptor(indexes, descriptor.file_descriptor.to_proto.message_type)
-          correct_message = Google::Protobuf::DescriptorPool.generated_pool.lookup("#{package}.#{path.join('.')}")
+          correct_message = Google::Protobuf::DescriptorPool.generated_pool.lookup("#{package}.#{path.join(".")}")
           correct_message.msgclass.decode(encoded)
         end
       end
