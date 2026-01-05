@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-class SchemaRegistry
+module SchemaRegistry
   module Output
     module ProtoText
       ParseInfo = Struct.new(:writer, :package, :message) do

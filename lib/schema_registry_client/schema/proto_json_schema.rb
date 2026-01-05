@@ -3,7 +3,7 @@
 require "schema_registry_client/schema/base"
 require "schema_registry_client/output/json_schema"
 
-class SchemaRegistry
+module SchemaRegistry
   module Schema
     class ProtoJsonSchema < Base
       class << self

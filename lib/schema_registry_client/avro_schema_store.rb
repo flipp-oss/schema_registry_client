@@ -2,7 +2,7 @@
 
 require "avro"
 
-class SchemaRegistry
+module SchemaRegistry
   class AvroSchemaStore
     def initialize(path: nil)
       @path = path or raise "Please specify a schema path"
@@ -116,7 +116,7 @@ class SchemaRegistry
       end
       load_schema!(fullname, @schemas.dup)
     rescue Errno::ENOENT, Errno::ENAMETOOLONG
-      raise "could not find Avro schema at `#{schema_path}'"
+      raise SchemaRegistry::SchemaNotFoundError, "could not find Avro schema at `#{schema_path}'"
     end
 
     def build_schema_path(fullname)

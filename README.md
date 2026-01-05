@@ -27,7 +27,7 @@ Example usage:
 ```ruby
 require 'schema_registry_client'
 
-schema_registry_client = SchemaRegistry.new(registry_url: 'http://localhost:8081', schema_paths: ['path/to/protos'])
+schema_registry_client = SchemaRegistry::Client.new(registry_url: 'http://localhost:8081', schema_paths: ['path/to/protos'])
 message = MyProto::MyMessage.new(field1: 'value1', field2: 42)
 encoded = schema_registry_client.encode(message, subject: 'my-subject')
 

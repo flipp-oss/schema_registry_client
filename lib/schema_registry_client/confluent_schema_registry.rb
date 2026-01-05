@@ -2,7 +2,7 @@
 
 require "excon"
 
-class SchemaRegistry
+module SchemaRegistry
   class ConfluentSchemaRegistry
     CONTENT_TYPE = "application/vnd.schemaregistry.v1+json"
 

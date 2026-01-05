@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-class SchemaRegistry
+module SchemaRegistry
   module Wire
     class << self
       # Write an int with zig-zag encoding. Copied from Avro.

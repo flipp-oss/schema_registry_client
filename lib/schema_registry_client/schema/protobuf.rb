@@ -7,7 +7,7 @@ require "schema_registry_client/output/proto_text"
 require "schema_registry_client/schema/base"
 require "schema_registry_client/wire"
 
-class SchemaRegistry
+module SchemaRegistry
   module Schema
     class Protobuf < Base
       class << self

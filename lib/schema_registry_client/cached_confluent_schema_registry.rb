@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-class SchemaRegistry
+module SchemaRegistry
   class CachedConfluentSchemaRegistry
     # @param upstream [SchemaRegistry::ConfluentSchemaRegistry]
     def initialize(upstream)

@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-class SchemaRegistry
+module SchemaRegistry
   module Schema
     class MissingImplementationError < StandardError; end
 

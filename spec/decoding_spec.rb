@@ -2,7 +2,7 @@
 
 RSpec.describe "decoding" do
   let(:schema_registry_client) do
-    SchemaRegistry.new(
+    SchemaRegistry::Client.new(
       registry_url: "http://localhost:8081"
     )
   end
@@ -38,7 +38,7 @@ RSpec.describe "decoding" do
 
   describe "with JSON" do
     let(:schema_registry_client) do
-      SchemaRegistry.new(
+      SchemaRegistry::Client.new(
         registry_url: "http://localhost:8081",
         schema_type: SchemaRegistry::Schema::ProtoJsonSchema
       )
@@ -62,7 +62,7 @@ RSpec.describe "decoding" do
   describe "with Avro" do
     let(:schema_registry_client) do
       SchemaRegistry.avro_schema_path = "#{__dir__}/schemas"
-      SchemaRegistry.new(
+      SchemaRegistry::Client.new(
         registry_url: "http://localhost:8081",
         schema_type: SchemaRegistry::Schema::Avro
       )

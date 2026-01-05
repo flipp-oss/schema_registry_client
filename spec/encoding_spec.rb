@@ -2,7 +2,7 @@
 
 RSpec.describe "encoding" do
   let(:schema_registry_client) do
-    SchemaRegistry.new(
+    SchemaRegistry::Client.new(
       registry_url: "http://localhost:8081"
     )
   end
@@ -59,7 +59,7 @@ RSpec.describe "encoding" do
 
   describe "with JSON" do
     let(:schema_registry_client) do
-      SchemaRegistry.new(
+      SchemaRegistry::Client.new(
         registry_url: "http://localhost:8081",
         schema_type: SchemaRegistry::Schema::ProtoJsonSchema
       )
@@ -104,7 +104,7 @@ RSpec.describe "encoding" do
   describe "with Avro" do
     let(:schema_registry_client) do
       SchemaRegistry.avro_schema_path = "#{__dir__}/schemas"
-      SchemaRegistry.new(
+      SchemaRegistry::Client.new(
         registry_url: "http://localhost:8081",
         schema_type: SchemaRegistry::Schema::Avro
       )

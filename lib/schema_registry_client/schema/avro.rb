@@ -3,7 +3,7 @@
 require "schema_registry_client/schema/base"
 require "schema_registry_client/avro_schema_store"
 
-class SchemaRegistry
+module SchemaRegistry
   module Schema
     class Avro < Base
       DEFAULT_SCHEMAS_PATH = "./schemas"
