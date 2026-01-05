@@ -154,7 +154,5 @@ module SchemaRegistry
         end,
         schema_type: @schema.schema_type)
     end
-
   end
-
 end
