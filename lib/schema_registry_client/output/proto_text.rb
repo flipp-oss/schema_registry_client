@@ -18,7 +18,7 @@ module SchemaRegistry
         end
 
         def write_indent(str)
-          @indent.times { write(' ') }
+          @indent.times { write(" ") }
           write(str)
         end
 
@@ -42,7 +42,7 @@ module SchemaRegistry
 
       class << self
         def fetch(message_name)
-          name = message_name.start_with?('.') ? message_name[1..] : message_name
+          name = message_name.start_with?(".") ? message_name[1..] : message_name
           Google::Protobuf::DescriptorPool.generated_pool.lookup(name)
         end
 
@@ -87,23 +87,23 @@ module SchemaRegistry
             info.indent
             write_field(info, extension)
             info.dedent
-            info.write_line('}')
+            info.write_line("}")
           end
           descriptor.extension.any?
         end
 
         def write_reserved(writer, descriptor)
           reserved = descriptor.reserved_range.map do |range|
-            range.start == range.end - 1 ? range.start.to_s : "#{range.start} to #{range.end - 1}"
+            (range.start == range.end - 1) ? range.start.to_s : "#{range.start} to #{range.end - 1}"
           end
           found = false
           if reserved.any?
             found = true
-            writer.write_line("reserved #{reserved.join(', ')};")
+            writer.write_line("reserved #{reserved.join(", ")};")
           end
           if descriptor.reserved_name.any?
             found = true
-            writer.write_line("reserved #{descriptor.reserved_name.map(&:to_json).join(', ')};")
+            writer.write_line("reserved #{descriptor.reserved_name.map(&:to_json).join(", ")};")
           end
           writer.writenl if found
         end
@@ -124,7 +124,7 @@ module SchemaRegistry
 
         def write_message(info, message_type)
           info.message = message_type
-          info.write_indent('message ')
+          info.write_indent("message ")
           info.write("#{message_type.name} {")
           info.writenl
           info.indent
@@ -150,61 +150,61 @@ module SchemaRegistry
             write_message(info, subtype)
           end
           info.dedent
-          info.write_line('}')
+          info.write_line("}")
         end
 
         def field_type(info, field_type)
           case field_type.type
           when :TYPE_INT32
-            'int32'
+            "int32"
           when :TYPE_INT64
-            'int64'
+            "int64"
           when :TYPE_UINT32
-            'uint32'
+            "uint32"
           when :TYPE_UINT64
-            'uint64'
+            "uint64"
           when :TYPE_SINT32
-            'sint32'
+            "sint32"
           when :TYPE_SINT64
-            'sint64'
+            "sint64"
           when :TYPE_FIXED32
-            'fixed32'
+            "fixed32"
           when :TYPE_FIXED64
-            'fixed64'
+            "fixed64"
           when :TYPE_SFIXED32
-            'sfixed32'
+            "sfixed32"
           when :TYPE_SFIXED64
-            'sfixed64'
+            "sfixed64"
           when :TYPE_FLOAT
-            'float'
+            "float"
           when :TYPE_DOUBLE
-            'double'
+            "double"
           when :TYPE_BOOL
-            'bool'
+            "bool"
           when :TYPE_STRING
-            'string'
+            "string"
           when :TYPE_BYTES
-            'bytes'
+            "bytes"
           when :TYPE_ENUM, :TYPE_MESSAGE
             # remove leading .
             type = fetch(field_type.type_name[1..])
-            name = type.name.sub("#{info.package}.#{info.message.name}.", '')
-            name.sub("#{info.package}.", '')
+            name = type.name.sub("#{info.package}.#{info.message.name}.", "")
+            name.sub("#{info.package}.", "")
           end
         end
 
         def write_field(info, field, oneof: false)
           return if !oneof && field.has_oneof_index?
 
-          info.write_indent('')
+          info.write_indent("")
 
           klass = nil
-          klass = fetch(field.type_name).to_proto if field.type_name && field.type_name != ''
+          klass = fetch(field.type_name).to_proto if field.type_name && field.type_name != ""
 
           if field.proto3_optional
-            info.write('optional ')
+            info.write("optional ")
           elsif field.label == :LABEL_REPEATED && !klass&.options&.map_entry
-            info.write('repeated ')
+            info.write("repeated ")
           end
 
           if klass&.options&.map_entry
@@ -215,24 +215,24 @@ module SchemaRegistry
           info.write(" #{field.name} = #{field.number}")
 
           write_field_options(info, field)
-          info.write(';')
+          info.write(";")
           info.writenl
         end
 
         def write_field_options(info, field)
           return unless field.options
 
-          info.write(' [')
-          info.write(field.options.to_h.map { |name, value| "#{name} = #{value}" }.join(', '))
+          info.write(" [")
+          info.write(field.options.to_h.map { |name, value| "#{name} = #{value}" }.join(", "))
           write_options(info, field, include_option_label: false)
-          info.write(']')
+          info.write("]")
         end
 
         def write_oneofs(info, message)
           message.oneof_decl.each_with_index do |oneof, i|
             # synthetic oneof for proto3 optional fields
-            next if oneof.name.start_with?('_') &&
-                    message.field.any? { |f| f.proto3_optional && f.name == oneof.name[1..] }
+            next if oneof.name.start_with?("_") &&
+              message.field.any? { |f| f.proto3_optional && f.name == oneof.name[1..] }
 
             info.write_line("oneof #{oneof.name} {")
             info.indent
@@ -240,12 +240,12 @@ module SchemaRegistry
               write_field(info, field, oneof: true)
             end
             info.dedent
-            info.write_line('}')
+            info.write_line("}")
           end
         end
 
         def write_enum(info, enum_type)
-          info.write('enum ')
+          info.write("enum ")
           info.write("#{enum_type.name} {")
           info.writenl
           info.indent
@@ -254,30 +254,30 @@ module SchemaRegistry
             info.write_line("#{value.name} = #{value.number};")
           end
           info.dedent
-          info.write_line('}')
+          info.write_line("}")
           info.writenl
         end
 
         def method_type(package, name)
-          output = name.sub("#{package}.", '')
-          output = output[1..] if output.start_with?('.')
+          output = name.sub("#{package}.", "")
+          output = output[1..] if output.start_with?(".")
           output
         end
 
         def write_service(info, service)
           info.write_line("service #{service.name} {")
           info.indent
-          service['method'].each do |method|
+          service["method"].each do |method|
             info.write_indent("rpc #{method.name}(#{method_type(info.package, method.input_type)}) ")
             info.write("returns (#{method_type(info.package, method.output_type)}) {")
             info.writenl
             info.indent
             write_options(info, method) if method.options
             info.dedent
-            info.write_line('};')
+            info.write_line("};")
           end
           info.dedent
-          info.write_line('}')
+          info.write_line("}")
         end
 
         # @return [Boolean] true if any options were written
@@ -289,7 +289,7 @@ module SchemaRegistry
 
           found = false
           json.each_key do |name|
-            option_name = name.tr('[]', '')
+            option_name = name.tr("[]", "")
             ext = fetch(option_name)
             next if ext.nil?
 
@@ -306,7 +306,7 @@ module SchemaRegistry
                 info.write_indent(line)
                 info.writenl if i < lines.length - 1
               end
-              info.write(';')
+              info.write(";")
             else
               info.write(options.to_json)
             end

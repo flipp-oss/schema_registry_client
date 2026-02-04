@@ -31,7 +31,7 @@ module SchemaRegistry
       return @versions_by_subject_and_id[key] if @versions_by_subject_and_id[key]
 
       results = @upstream.schema_subject_versions(id)
-      @versions_by_subject_and_id[key] = results&.find { |r| r['subject'] == subject }&.dig('version')
+      @versions_by_subject_and_id[key] = results&.find { |r| r["subject"] == subject }&.dig("version")
     end
 
     # @param subject [String] the subject to check
@@ -45,13 +45,13 @@ module SchemaRegistry
     # @param schema [String] the schema text to register
     # @param references [Array<Hash>] optional references to other schemas
     # @param schema_type [String]
-    def register(subject, schema, references: [], schema_type: 'PROTOBUF')
+    def register(subject, schema, references: [], schema_type: "PROTOBUF")
       key = [subject, schema]
 
       @ids_by_schema[key] ||= @upstream.register(subject,
-                                                 schema,
-                                                 references: references,
-                                                 schema_type: schema_type)
+        schema,
+        references: references,
+        schema_type: schema_type)
     end
   end
 end

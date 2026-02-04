@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
-require 'avro'
+require "avro"
 
 module SchemaRegistry
   class AvroSchemaStore
     def initialize(path: nil)
-      @path = path or raise 'Please specify a schema path'
+      @path = path or raise "Please specify a schema path"
       @schemas = {}
       @schema_text = {}
       @mutex = Mutex.new
@@ -38,14 +38,14 @@ module SchemaRegistry
 
     # Loads all schema definition files in the `schemas_dir`.
     def load_schemas!
-      pattern = [@path, '**', '*.avsc'].join('/')
+      pattern = [@path, "**", "*.avsc"].join("/")
 
       Dir.glob(pattern) do |schema_path|
         # Remove the path prefix.
-        schema_path.sub!(%r{^/?#{@path}/}, '')
+        schema_path.sub!(%r{^/?#{@path}/}, "")
 
         # Replace `/` with `.` and chop off the file extension.
-        schema_name = File.basename(schema_path.tr('/', '.'), '.avsc')
+        schema_name = File.basename(schema_path.tr("/", "."), ".avsc")
 
         # Load and cache the schema.
         find(schema_name)
@@ -54,8 +54,8 @@ module SchemaRegistry
 
     # @param schema_hash [Hash]
     def add_schema(schema_hash)
-      name = schema_hash['name']
-      namespace = schema_hash['namespace']
+      name = schema_hash["name"]
+      namespace = schema_hash["namespace"]
       full_name = Avro::Name.make_fullname(name, namespace)
       return if @schemas.key?(full_name)
 
@@ -120,7 +120,7 @@ module SchemaRegistry
     end
 
     def build_schema_path(fullname)
-      *namespace, schema_name = fullname.split('.')
+      *namespace, schema_name = fullname.split(".")
       File.join(@path, *namespace, "#{schema_name}.avsc")
     end
   end
