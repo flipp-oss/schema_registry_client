@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    schema_registry_client (0.0.7)
+    schema_registry_client (0.0.8)
       avro
       excon
       google-protobuf
@@ -23,6 +23,9 @@ GEM
     excon (1.3.2)
       logger
     google-protobuf (4.33.2-arm64-darwin)
+      bigdecimal
+      rake (>= 13)
+    google-protobuf (4.33.2-x86_64-linux-gnu)
       bigdecimal
       rake (>= 13)
     hashdiff (1.2.1)
@@ -104,6 +107,7 @@ GEM
 
 PLATFORMS
   arm64-darwin
+  x86_64-linux
 
 DEPENDENCIES
   bundler (~> 2.0)
