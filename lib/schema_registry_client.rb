@@ -1,12 +1,12 @@
 # frozen_string_literal: true
 
-require "logger"
-require "json"
-require "schema_registry_client/confluent_schema_registry"
-require "schema_registry_client/cached_confluent_schema_registry"
-require "schema_registry_client/schema/protobuf"
-require "schema_registry_client/schema/proto_json_schema"
-require "schema_registry_client/schema/avro"
+require 'logger'
+require 'json'
+require 'schema_registry_client/confluent_schema_registry'
+require 'schema_registry_client/cached_confluent_schema_registry'
+require 'schema_registry_client/schema/protobuf'
+require 'schema_registry_client/schema/proto_json_schema'
+require 'schema_registry_client/schema/avro'
 
 module SchemaRegistry
   class SchemaNotFoundError < StandardError; end
@@ -27,7 +27,7 @@ module SchemaRegistry
     # 1: https://github.com/confluentinc/schema-registry
     # https://docs.confluent.io/platform/current/schema-registry/fundamentals/serdes-develop/serdes-protobuf.html
     # https://docs.confluent.io/platform/current/schema-registry/fundamentals/serdes-develop/index.html#wire-format
-    MAGIC_BYTE = [0].pack("C").freeze
+    MAGIC_BYTE = [0].pack('C').freeze
 
     # Instantiate a new SchemaRegistry instance with the given configuration.
     #
@@ -66,7 +66,7 @@ module SchemaRegistry
       client_key_data: nil,
       connect_timeout: nil,
       resolv_resolver: nil,
-      schema_type: SchemaRegistry::Schema::Protobuf
+      schema_type: SchemaRegistry::Schema::Protobuf.new
     )
       @logger = logger || Logger.new($stderr)
       @registry = registry || SchemaRegistry::CachedConfluentSchemaRegistry.new(
@@ -104,7 +104,7 @@ module SchemaRegistry
       stream.write(MAGIC_BYTE)
 
       # The schema id is encoded as a 4-byte big-endian integer.
-      stream.write([id].pack("N"))
+      stream.write([id].pack('N'))
 
       @schema.encode(message, stream, schema_name: schema_name)
       stream.string
@@ -123,7 +123,7 @@ module SchemaRegistry
       raise "Expected data to begin with a magic byte, got `#{magic_byte.inspect}`" if magic_byte != MAGIC_BYTE
 
       # The schema id is a 4-byte big-endian integer.
-      schema_id = stream.read(4).unpack1("N")
+      schema_id = stream.read(4).unpack1('N')
       schema = @registry.fetch(schema_id)
       @schema.decode(stream, schema)
     rescue Excon::Error::NotFound
@@ -144,15 +144,15 @@ module SchemaRegistry
       end
 
       @registry.register(subject,
-        schema_text,
-        references: dependencies.keys.map.with_index do |dependency, i|
-          {
-            name: dependency,
-            subject: dependency,
-            version: versions[i]
-          }
-        end,
-        schema_type: @schema.schema_type)
+                         schema_text,
+                         references: dependencies.keys.map.with_index do |dependency, i|
+                           {
+                             name: dependency,
+                             subject: dependency,
+                             version: versions[i]
+                           }
+                         end,
+                         schema_type: @schema.class.schema_type)
     end
   end
 end

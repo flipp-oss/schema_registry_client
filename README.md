@@ -31,7 +31,7 @@ Note that unlike AvroTurf, you must concatenate the namespace and schema name to
 ```ruby
 require 'schema_registry_client'
 
-client = SchemaRegistry::Client.new(registry_url: 'http://localhost:8081', schema_type: SchemaRegistry::Schema::Avro)
+client = SchemaRegistry::Client.new(registry_url: 'http://localhost:8081', schema_type: SchemaRegistry::Schema::Avro.new)
 SchemaRegistry.avro_schema_path = 'path/to/schemas'
 message = {field1: 'value1', field2: 42 }
 encoded = client.encode(message, schema_name: 'com.my-namespace.MySchema', subject: 'my-subject')
@@ -44,7 +44,7 @@ decoded_avro_message = client.decode(encoded_string)
 ### Protobuf
 
 ```ruby
-client = SchemaRegistry::Client.new(registry_url: 'http://localhost:8081', schema_type: SchemaRegistry::Schema::Protobuf)
+client = SchemaRegistry::Client.new(registry_url: 'http://localhost:8081', schema_type: SchemaRegistry::Schema::Protobuf.new)
 message = MyProtoMessage.new(field1: 'value1', field2: 42)
 encoded = client.encode(message, subject: 'my-proto-subject')
 
