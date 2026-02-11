@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## UNRELEASED
 
+# 0.0.9 - 2026-02-11
+
+* Fix: Do not send `schemaType` if schema type is `AVRO`, for backwards compatibility with older schema registries.
+
 # 0.0.8 - 2026-02-04
 
 * Support passing a `schema_store` into the `Avro` schema backend.
