@@ -117,8 +117,7 @@ RSpec.describe "encoding" do
     it "should encode a simple message" do
       schema = File.read("#{__dir__}/schemas/simple/v1/SimpleMessage.avsc")
       stub = stub_request(:post, "http://localhost:8081/subjects/simple/versions")
-        .with(body: {"references" => [],
-                     "schema" => schema}).to_return_json(body: {id: 15})
+        .with(body: {"schema" => schema}).to_return_json(body: {id: 15})
       msg = {"name" => "my name"}
       encoded = schema_registry_client.encode(msg, subject: "simple", schema_name: "simple.v1.SimpleMessage")
       # Avro encoding: magic byte (0x00) + schema id (4 bytes, big-endian) + Avro binary data
@@ -135,8 +134,7 @@ RSpec.describe "encoding" do
     it "should encode a complex message with nested record" do
       schema = File.read("#{__dir__}/schemas/referenced/v1/MessageBA.avsc")
       stub = stub_request(:post, "http://localhost:8081/subjects/referenced/versions")
-        .with(body: {"references" => [],
-                     "schema" => schema}).to_return_json(body: {id: 20})
+        .with(body: {"schema" => schema}).to_return_json(body: {id: 20})
       msg = {
         "simple" => {
           "name" => "my name"
@@ -170,8 +168,7 @@ RSpec.describe "encoding" do
       File.write("#{multi_schema_path}/MultiFieldMessage.avsc", schema_json)
 
       stub = stub_request(:post, "http://localhost:8081/subjects/multi/versions")
-        .with(body: {"references" => [],
-                     "schema" => schema_json}).to_return_json(body: {id: 25})
+        .with(body: {"schema" => schema_json}).to_return_json(body: {id: 25})
 
       msg = {"name" => "Alice", "age" => 30}
       encoded = schema_registry_client.encode(msg, subject: "multi", schema_name: "test.v1.MultiFieldMessage")
@@ -189,8 +186,7 @@ RSpec.describe "encoding" do
     it "should validate schema before encoding" do
       schema = File.read("#{__dir__}/schemas/simple/v1/SimpleMessage.avsc")
       stub_request(:post, "http://localhost:8081/subjects/simple/versions")
-        .with(body: {"references" => [],
-                     "schema" => schema}).to_return_json(body: {id: 15})
+        .with(body: {"schema" => schema}).to_return_json(body: {id: 15})
 
       # Invalid message - missing required field
       msg = {"invalid_field" => "value"}

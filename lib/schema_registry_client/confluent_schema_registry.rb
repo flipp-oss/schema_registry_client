@@ -73,11 +73,12 @@ module SchemaRegistry
     # @param references [Array<Hash>] optional references to other schemas
     # @return [Integer] the ID of the registered schema
     def register(subject, schema, references: [], schema_type: "PROTOBUF")
-      body = {references: references,
-              schema: schema.to_s}
+      puts("schema_type #{schema_type}")
+      body = {schema: schema.to_s}
       # Not all schema registry versions support schemaType
       if schema_type != "AVRO"
         body[:schemaType] = schema_type
+        body[:references] = references
       end
       data = post("/subjects/#{@schema_context_prefix}#{CGI.escapeURIComponent(subject)}/versions",
         body: body.to_json)
