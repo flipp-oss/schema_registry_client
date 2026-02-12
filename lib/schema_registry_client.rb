@@ -14,6 +14,8 @@ module SchemaRegistry
 
   class << self
     attr_accessor :avro_schema_path
+
+    attr_accessor :debug
   end
 
   class Client

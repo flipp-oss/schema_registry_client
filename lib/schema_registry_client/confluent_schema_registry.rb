@@ -24,6 +24,9 @@ module SchemaRegistry
       resolv_resolver: nil,
       retry_limit: nil
     )
+      if SchemaRegistry.debug
+        logger.info("Creating Confluent Schema Registry client with url: #{url}, schema_context: #{schema_context}, user: #{user}, path_prefix: #{path_prefix}")
+      end
       @path_prefix = path_prefix
       @schema_context_prefix = schema_context.nil? ? "" : ":.#{schema_context}:"
       @schema_context_options = schema_context.nil? ? {} : {query: {subject: @schema_context_prefix}}
