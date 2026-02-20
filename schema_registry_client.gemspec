@@ -12,7 +12,7 @@ Gem::Specification.new do |spec|
   spec.summary = "Confluent Schema Registry client with support for Avro and Protobuf"
   spec.homepage = "https://github.com/flipp-oss/schema_registry_client"
   spec.license = "MIT"
-  spec.required_ruby_version = ">= 3.0"
+  spec.required_ruby_version = ">= 3.2"
 
   spec.metadata["rubygems_mfa_required"] = "true"
 
