@@ -22,7 +22,10 @@ module SchemaRegistry
         @schema_store ||= SchemaRegistry::AvroSchemaStore.new(
           path: SchemaRegistry.avro_schema_path || DEFAULT_SCHEMAS_PATH
         )
-        @schema_store.load_schemas!
+        unless @schemas_loaded
+          @schema_store.load_schemas!
+          @schemas_loaded = true
+        end
         @schema_store
       end
 
@@ -44,10 +47,10 @@ module SchemaRegistry
       end
 
       def decode(stream, schema_text)
-        # Parse the schema text from the registry into an Avro schema object
-        JSON.parse(schema_text)
-        writers_schema = ::Avro::Schema.parse(schema_text)
-
+        # Cache parsed writer schemas to avoid re-parsing on every decode
+        @parsed_writers_schemas ||= {}
+        @parsed_writers_schemas[schema_text] ||= ::Avro::Schema.parse(schema_text)
+        writers_schema = @parsed_writers_schemas[schema_text]
         decoder = ::Avro::IO::BinaryDecoder.new(stream)
 
         # Try to find the reader schema locally, fall back to writer schema

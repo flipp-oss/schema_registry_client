@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## UNRELEASED
 
+# 0.0.11 - 2026-02-20
+
+* Fixes for caching working correctly and ensuring we don't recalculate / re-parse Avro schemas
+
 # 0.0.10 - 2026-02-11
 
 * Fix: Do not send `schemaType` or `references` if schema type is `AVRO`, for backwards compatibility with older schema registries.

@@ -60,16 +60,17 @@ RSpec.describe "decoding" do
   end
 
   describe "with Avro" do
-    let(:schema_registry_client) do
+    around(:each) do |ex|
       SchemaRegistry.avro_schema_path = "#{__dir__}/schemas"
+      ex.run
+      SchemaRegistry.avro_schema_path = nil
+    end
+
+    let(:schema_registry_client) do
       SchemaRegistry::Client.new(
         registry_url: "http://localhost:8081",
         schema_type: SchemaRegistry::Schema::Avro.new
       )
-    end
-
-    after do
-      SchemaRegistry.avro_schema_path = nil
     end
 
     it "should decode a simple message" do
@@ -178,6 +179,123 @@ RSpec.describe "decoding" do
       expect do
         schema_registry_client.decode(encoded)
       end.to raise_error(/Schema|not found/i)
+    end
+  end
+
+  describe "caching" do
+    it "should not fetch the same schema ID twice (Protobuf)" do
+      schema = File.read("#{__dir__}/schemas/simple/simple.proto")
+      stub = stub_request(:get, "http://localhost:8081/schemas/ids/15")
+        .to_return_json(body: {schema: schema})
+      msg = Simple::V1::SimpleMessage.new(name: "my name")
+      encoded = "\u0000\u0000\u0000\u0000\u000F\u0000#{msg.to_proto}"
+
+      3.times { schema_registry_client.decode(encoded) }
+
+      expect(stub).to have_been_requested.once
+    end
+
+    it "should fetch different schema IDs independently" do
+      simple_schema = File.read("#{__dir__}/schemas/simple/simple.proto")
+      stub_15 = stub_request(:get, "http://localhost:8081/schemas/ids/15")
+        .to_return_json(body: {schema: simple_schema})
+
+      ref_schema = File.read("#{__dir__}/schemas/referenced/referer.proto")
+      stub_20 = stub_request(:get, "http://localhost:8081/schemas/ids/20")
+        .to_return_json(body: {schema: ref_schema})
+
+      msg1 = Simple::V1::SimpleMessage.new(name: "my name")
+      encoded1 = "\u0000\u0000\u0000\u0000\u000F\u0000#{msg1.to_proto}"
+
+      msg2 = Referenced::V1::MessageB::MessageBA.new(
+        simple: Simple::V1::SimpleMessage.new(name: "my name")
+      )
+      encoded2 = "\u0000\u0000\u0000\u0000\u0014\u0004\u0002\u0000#{msg2.to_proto}"
+
+      # Decode both messages
+      schema_registry_client.decode(encoded1)
+      schema_registry_client.decode(encoded2)
+
+      # Each schema fetched exactly once
+      expect(stub_15).to have_been_requested.once
+      expect(stub_20).to have_been_requested.once
+
+      # Decode again - no new requests
+      schema_registry_client.decode(encoded1)
+      schema_registry_client.decode(encoded2)
+
+      expect(stub_15).to have_been_requested.once
+      expect(stub_20).to have_been_requested.once
+    end
+
+    it "should not share cache between different client instances" do
+      schema = File.read("#{__dir__}/schemas/simple/simple.proto")
+      stub = stub_request(:get, "http://localhost:8081/schemas/ids/15")
+        .to_return_json(body: {schema: schema})
+      msg = Simple::V1::SimpleMessage.new(name: "my name")
+      encoded = "\u0000\u0000\u0000\u0000\u000F\u0000#{msg.to_proto}"
+
+      schema_registry_client.decode(encoded)
+
+      # A second client should make its own request
+      client2 = SchemaRegistry::Client.new(registry_url: "http://localhost:8081")
+      client2.decode(encoded)
+
+      expect(stub).to have_been_requested.twice
+    end
+
+    describe "with Avro" do
+      around(:each) do |ex|
+        SchemaRegistry.avro_schema_path = "#{__dir__}/schemas"
+        ex.run
+        SchemaRegistry.avro_schema_path = nil
+      end
+
+      let(:schema_registry_client) do
+        SchemaRegistry::Client.new(
+          registry_url: "http://localhost:8081",
+          schema_type: SchemaRegistry::Schema::Avro.new
+        )
+      end
+
+      it "should not fetch the same schema ID twice" do
+        schema = File.read("#{__dir__}/schemas/simple/v1/SimpleMessage.avsc")
+        stub = stub_request(:get, "http://localhost:8081/schemas/ids/15")
+          .to_return_json(body: {schema: schema})
+
+        encoded = "\u0000\u0000\u0000\u0000\u000F\u000Emy name"
+
+        3.times { schema_registry_client.decode(encoded) }
+
+        expect(stub).to have_been_requested.once
+      end
+
+      it "should fetch different schema IDs independently" do
+        simple_schema = File.read("#{__dir__}/schemas/simple/v1/SimpleMessage.avsc")
+        stub_15 = stub_request(:get, "http://localhost:8081/schemas/ids/15")
+          .to_return_json(body: {schema: simple_schema})
+
+        nested_schema = File.read("#{__dir__}/schemas/referenced/v1/MessageBA.avsc")
+        stub_20 = stub_request(:get, "http://localhost:8081/schemas/ids/20")
+          .to_return_json(body: {schema: nested_schema})
+
+        encoded1 = "\u0000\u0000\u0000\u0000\u000F\u000Emy name"
+        encoded2 = "\u0000\u0000\u0000\u0000\u0014\u000Emy name"
+
+        # Decode both messages
+        schema_registry_client.decode(encoded1)
+        schema_registry_client.decode(encoded2)
+
+        expect(stub_15).to have_been_requested.once
+        expect(stub_20).to have_been_requested.once
+
+        # Decode again - no new requests
+        schema_registry_client.decode(encoded1)
+        schema_registry_client.decode(encoded2)
+
+        expect(stub_15).to have_been_requested.once
+        expect(stub_20).to have_been_requested.once
+      end
     end
   end
 end

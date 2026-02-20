@@ -134,7 +134,12 @@ module SchemaRegistry
 
     def register_schema(message, subject, schema_text: nil, schema_name: nil)
       schema_text ||= @schema.schema_text(message, schema_name: schema_name)
-      return if @registry.registered?(schema_text, subject)
+
+      # Fast path: if already registered, return the cached ID without
+      # resolving dependencies again.
+      if @registry.registered?(subject, schema_text)
+        return @registry.fetch_id(subject, schema_text)
+      end
 
       # register dependencies first
       dependencies = @schema.dependencies(message)

@@ -73,7 +73,6 @@ module SchemaRegistry
     # @param references [Array<Hash>] optional references to other schemas
     # @return [Integer] the ID of the registered schema
     def register(subject, schema, references: [], schema_type: "PROTOBUF")
-      puts("schema_type #{schema_type}")
       body = {schema: schema.to_s}
       # Not all schema registry versions support schemaType
       if schema_type != "AVRO"

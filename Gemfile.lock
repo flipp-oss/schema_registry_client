@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    schema_registry_client (0.0.10)
+    schema_registry_client (0.0.11)
       avro
       excon
       google-protobuf

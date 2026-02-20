@@ -102,16 +102,17 @@ RSpec.describe "encoding" do
   end
 
   describe "with Avro" do
-    let(:schema_registry_client) do
+    around(:each) do |ex|
       SchemaRegistry.avro_schema_path = "#{__dir__}/schemas"
+      ex.run
+      SchemaRegistry.avro_schema_path = nil
+    end
+
+    let(:schema_registry_client) do
       SchemaRegistry::Client.new(
         registry_url: "http://localhost:8081",
         schema_type: SchemaRegistry::Schema::Avro.new
       )
-    end
-
-    after do
-      SchemaRegistry.avro_schema_path = nil
     end
 
     it "should encode a simple message" do
@@ -194,6 +195,145 @@ RSpec.describe "encoding" do
       expect do
         schema_registry_client.encode(msg, subject: "simple", schema_name: "simple.v1.SimpleMessage")
       end.to raise_error(Avro::SchemaValidator::ValidationError)
+    end
+  end
+
+  describe "caching" do
+    it "should not register the same schema twice (Protobuf)" do
+      schema = File.read("#{__dir__}/schemas/simple/simple.proto")
+      stub = stub_request(:post, "http://localhost:8081/subjects/simple/versions")
+        .with(body: {"schemaType" => "PROTOBUF",
+                     "references" => [],
+                     "schema" => schema}).to_return_json(body: {id: 15})
+      msg = Simple::V1::SimpleMessage.new(name: "my name")
+
+      3.times { schema_registry_client.encode(msg, subject: "simple") }
+
+      expect(stub).to have_been_requested.once
+    end
+
+    it "should register schemas for different subjects separately" do
+      schema = File.read("#{__dir__}/schemas/simple/simple.proto")
+      stub_a = stub_request(:post, "http://localhost:8081/subjects/subject-a/versions")
+        .with(body: {"schemaType" => "PROTOBUF",
+                     "references" => [],
+                     "schema" => schema}).to_return_json(body: {id: 15})
+      stub_b = stub_request(:post, "http://localhost:8081/subjects/subject-b/versions")
+        .with(body: {"schemaType" => "PROTOBUF",
+                     "references" => [],
+                     "schema" => schema}).to_return_json(body: {id: 16})
+
+      msg = Simple::V1::SimpleMessage.new(name: "my name")
+
+      schema_registry_client.encode(msg, subject: "subject-a")
+      schema_registry_client.encode(msg, subject: "subject-b")
+
+      # Both subjects should get their own registration
+      expect(stub_a).to have_been_requested.once
+      expect(stub_b).to have_been_requested.once
+
+      # Encoding again for either subject should not re-register
+      schema_registry_client.encode(msg, subject: "subject-a")
+      schema_registry_client.encode(msg, subject: "subject-b")
+
+      expect(stub_a).to have_been_requested.once
+      expect(stub_b).to have_been_requested.once
+    end
+
+    it "should not re-register dependencies on subsequent encodes (Protobuf)" do
+      schema = File.read("#{__dir__}/schemas/referenced/referer.proto")
+      dep_schema = File.read("#{__dir__}/schemas/simple/simple.proto")
+      dep_stub = stub_request(:post, "http://localhost:8081/subjects/simple%2Fsimple.proto/versions")
+        .with(body: {"schemaType" => "PROTOBUF",
+                     "references" => [],
+                     "schema" => dep_schema}).to_return_json(body: {id: 15})
+      version_stub = stub_request(:get, "http://localhost:8081/schemas/ids/15/versions")
+        .to_return_json(body: [{version: 1, subject: "simple/simple.proto"}])
+      stub = stub_request(:post, "http://localhost:8081/subjects/referenced/versions")
+        .with(body: {"schemaType" => "PROTOBUF",
+                     "references" => [
+                       {
+                         name: "simple/simple.proto",
+                         subject: "simple/simple.proto",
+                         version: 1
+                       }
+                     ],
+                     "schema" => schema}).to_return_json(body: {id: 20})
+      msg = Referenced::V1::MessageB::MessageBA.new(
+        simple: Simple::V1::SimpleMessage.new(name: "my name")
+      )
+
+      3.times { schema_registry_client.encode(msg, subject: "referenced") }
+
+      expect(stub).to have_been_requested.once
+      expect(dep_stub).to have_been_requested.once
+      expect(version_stub).to have_been_requested.once
+    end
+
+    it "should not share cache between different client instances" do
+      schema = File.read("#{__dir__}/schemas/simple/simple.proto")
+      stub = stub_request(:post, "http://localhost:8081/subjects/simple/versions")
+        .with(body: {"schemaType" => "PROTOBUF",
+                     "references" => [],
+                     "schema" => schema}).to_return_json(body: {id: 15})
+      msg = Simple::V1::SimpleMessage.new(name: "my name")
+
+      schema_registry_client.encode(msg, subject: "simple")
+
+      # A second client should make its own registration request
+      client2 = SchemaRegistry::Client.new(registry_url: "http://localhost:8081")
+      client2.encode(msg, subject: "simple")
+
+      expect(stub).to have_been_requested.twice
+    end
+
+    describe "with Avro" do
+      around(:each) do |ex|
+        SchemaRegistry.avro_schema_path = "#{__dir__}/schemas"
+        ex.run
+        SchemaRegistry.avro_schema_path = nil
+      end
+
+      let(:schema_registry_client) do
+        SchemaRegistry::Client.new(
+          registry_url: "http://localhost:8081",
+          schema_type: SchemaRegistry::Schema::Avro.new
+        )
+      end
+
+      it "should not register the same schema twice" do
+        schema = File.read("#{__dir__}/schemas/simple/v1/SimpleMessage.avsc")
+        stub = stub_request(:post, "http://localhost:8081/subjects/simple/versions")
+          .with(body: {"schema" => schema}).to_return_json(body: {id: 15})
+        msg = {"name" => "my name"}
+
+        3.times { schema_registry_client.encode(msg, subject: "simple", schema_name: "simple.v1.SimpleMessage") }
+
+        expect(stub).to have_been_requested.once
+      end
+
+      it "should register schemas for different subjects separately" do
+        schema = File.read("#{__dir__}/schemas/simple/v1/SimpleMessage.avsc")
+        stub_a = stub_request(:post, "http://localhost:8081/subjects/subject-a/versions")
+          .with(body: {"schema" => schema}).to_return_json(body: {id: 15})
+        stub_b = stub_request(:post, "http://localhost:8081/subjects/subject-b/versions")
+          .with(body: {"schema" => schema}).to_return_json(body: {id: 16})
+
+        msg = {"name" => "my name"}
+
+        schema_registry_client.encode(msg, subject: "subject-a", schema_name: "simple.v1.SimpleMessage")
+        schema_registry_client.encode(msg, subject: "subject-b", schema_name: "simple.v1.SimpleMessage")
+
+        expect(stub_a).to have_been_requested.once
+        expect(stub_b).to have_been_requested.once
+
+        # Encoding again should not re-register
+        schema_registry_client.encode(msg, subject: "subject-a", schema_name: "simple.v1.SimpleMessage")
+        schema_registry_client.encode(msg, subject: "subject-b", schema_name: "simple.v1.SimpleMessage")
+
+        expect(stub_a).to have_been_requested.once
+        expect(stub_b).to have_been_requested.once
+      end
     end
   end
 end
