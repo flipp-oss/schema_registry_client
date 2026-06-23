@@ -30,7 +30,8 @@ module SchemaRegistry
       end
 
       def schema_text(_message, schema_name: nil)
-        schema_store.find_text(schema_name)
+        @registration_text ||= {}
+        @registration_text[schema_name] ||= resolve_registration_text(schema_name)
       end
 
       def encode(message, stream, schema_name: nil)
@@ -62,6 +63,22 @@ module SchemaRegistry
 
         reader = ::Avro::IO::DatumReader.new(writers_schema, readers_schema)
         reader.read(decoder)
+      end
+
+      private
+
+      # The cached text is the verbatim .avsc file. When a schema references a
+      # named type that is defined in a *separate* .avsc file, that text is not a
+      # valid standalone Avro schema and the registry rejects it ("Input schema
+      # is an invalid Avro schema"). Detect that case and register the
+      # fully-resolved (inlined) schema instead. Self-contained schemas parse on
+      # their own and are registered unchanged for backwards compatibility.
+      def resolve_registration_text(schema_name)
+        raw = schema_store.find_text(schema_name)
+        ::Avro::Schema.parse(raw)
+        raw
+      rescue ::Avro::UnknownSchemaError
+        schema_store.find(schema_name).to_avro.to_json
       end
     end
   end

@@ -196,6 +196,27 @@ RSpec.describe "encoding" do
         schema_registry_client.encode(msg, subject: "simple", schema_name: "simple.v1.SimpleMessage")
       end.to raise_error(Avro::SchemaValidator::ValidationError)
     end
+
+    it "registers a self-contained schema when the .avsc references another file" do
+      # cross_file.v1.Outer references cross_file.v1.Inner, which is defined in a
+      # *separate* .avsc file, so the raw Outer.avsc text is not a valid
+      # standalone Avro schema...
+      raw = File.read("#{__dir__}/schemas/cross_file/v1/Outer.avsc")
+      expect { Avro::Schema.parse(raw) }.to raise_error(Avro::UnknownSchemaError)
+
+      # ...and the fully-resolved (inlined) schema is registered instead.
+      resolved = SchemaRegistry::Schema::Avro.new.schema_text(nil, schema_name: "cross_file.v1.Outer")
+      expect { Avro::Schema.parse(resolved) }.not_to raise_error
+
+      stub = stub_request(:post, "http://localhost:8081/subjects/cross/versions")
+        .with(body: {"schema" => resolved}).to_return_json(body: {id: 30})
+
+      encoded = schema_registry_client.encode({"inner" => {"name" => "my name"}},
+        subject: "cross", schema_name: "cross_file.v1.Outer")
+
+      expect(encoded[1..4].unpack1("N")).to eq(30)
+      expect(stub).to have_been_requested.once
+    end
   end
 
   describe "caching" do
