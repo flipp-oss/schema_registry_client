@@ -68,8 +68,8 @@ module SchemaRegistry
       private
 
       # The verbatim .avsc text is invalid when it references a type defined in
-      # another file, so inline those (find resolves cross-file refs). Self-contained
-      # schemas parse standalone and are registered unchanged.
+      # another file, so register the resolved schema instead (`#find` inlines the
+      # referenced types). Self-contained schemas parse standalone and stay unchanged.
       def resolve_registration_text(schema_name)
         raw = schema_store.find_text(schema_name)
         ::Avro::Schema.parse(raw)
