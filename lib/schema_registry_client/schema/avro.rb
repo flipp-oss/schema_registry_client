@@ -67,12 +67,9 @@ module SchemaRegistry
 
       private
 
-      # The cached text is the verbatim .avsc file. When a schema references a
-      # named type that is defined in a *separate* .avsc file, that text is not a
-      # valid standalone Avro schema and the registry rejects it ("Input schema
-      # is an invalid Avro schema"). Detect that case and register the
-      # fully-resolved (inlined) schema instead. Self-contained schemas parse on
-      # their own and are registered unchanged for backwards compatibility.
+      # The verbatim .avsc text is invalid when it references a type defined in
+      # another file, so inline those (find resolves cross-file refs). Self-contained
+      # schemas parse standalone and are registered unchanged.
       def resolve_registration_text(schema_name)
         raw = schema_store.find_text(schema_name)
         ::Avro::Schema.parse(raw)
