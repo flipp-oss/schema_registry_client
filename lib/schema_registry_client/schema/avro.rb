@@ -29,8 +29,11 @@ module SchemaRegistry
         @schema_store
       end
 
+      # Register the fully-resolved (inlined) schema. The raw .avsc text is not a
+      # valid standalone schema when it references a type defined in another file.
       def schema_text(_message, schema_name: nil)
-        schema_store.find_text(schema_name)
+        @registration_text ||= {}
+        @registration_text[schema_name] ||= schema_store.find(schema_name).to_avro.to_json
       end
 
       def encode(message, stream, schema_name: nil)

@@ -1,0 +1,11 @@
+{
+  "type": "record",
+  "name": "Outer",
+  "namespace": "cross_file.v1",
+  "fields": [
+    {
+      "name": "inner",
+      "type": "cross_file.v1.Inner"
+    }
+  ]
+}

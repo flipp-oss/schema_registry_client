@@ -7,15 +7,10 @@ module SchemaRegistry
     def initialize(path: nil)
       @path = path or raise "Please specify a schema path"
       @schemas = {}
-      @schema_text = {}
       @mutex = Mutex.new
     end
 
     attr_accessor :schemas
-
-    def find_text(name)
-      @schema_text[name]
-    end
 
     # Resolves and returns a schema.
     #
@@ -64,7 +59,6 @@ module SchemaRegistry
       # we will discard it.
       schema = Avro::Schema.real_parse(schema_hash, @schemas.dup)
       @schemas[full_name] = schema
-      @schema_text[full_name] = JSON.pretty_generate(schema_hash)
 
       schema
     end
@@ -96,7 +90,6 @@ module SchemaRegistry
       # Essentially, the only schemas that should be resolvable in @schemas
       # are those that have their own .avsc files on disk.
       @schemas[fullname] = schema
-      @schema_text[fullname] = schema_text
 
       schema
     rescue ::Avro::UnknownSchemaError => e
