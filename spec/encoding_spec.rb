@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
 RSpec.describe "encoding" do
-  # The Avro backend registers the resolved (inlined) schema rather than the raw
-  # .avsc text; mirror that transformation when asserting request bodies.
   def avro_registration_text(raw)
     Avro::Schema.parse(raw).to_avro.to_json
   end
