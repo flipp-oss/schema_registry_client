@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## UNRELEASED
 
+# 0.1.0 - 2026-06-24
+
 * Avro: register the fully-resolved (inlined) schema so schemas that reference named types defined in other `.avsc` files are valid standalone.
 
 # 0.0.11 - 2026-02-20
