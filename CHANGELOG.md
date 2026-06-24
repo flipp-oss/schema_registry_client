@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## UNRELEASED
 
-* Avro: register the fully-resolved (inlined) schema when an `.avsc` references a named type defined in another `.avsc` file. Previously the raw file text was posted verbatim, which the registry rejected as an invalid standalone Avro schema. Self-contained schemas are registered unchanged.
+* Avro: register the fully-resolved (inlined) schema (via `Avro::Schema#to_avro`) so schemas that reference named types defined in other `.avsc` files are valid standalone. Previously the raw file text was posted verbatim, which the registry rejected as an invalid Avro schema.
 
 # 0.0.11 - 2026-02-20
 

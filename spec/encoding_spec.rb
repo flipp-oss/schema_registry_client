@@ -1,6 +1,12 @@
 # frozen_string_literal: true
 
 RSpec.describe "encoding" do
+  # The Avro backend registers the resolved (inlined) schema rather than the raw
+  # .avsc text; mirror that transformation when asserting request bodies.
+  def avro_registration_text(raw)
+    Avro::Schema.parse(raw).to_avro.to_json
+  end
+
   let(:schema_registry_client) do
     SchemaRegistry::Client.new(
       registry_url: "http://localhost:8081"
@@ -116,7 +122,7 @@ RSpec.describe "encoding" do
     end
 
     it "should encode a simple message" do
-      schema = File.read("#{__dir__}/schemas/simple/v1/SimpleMessage.avsc")
+      schema = avro_registration_text(File.read("#{__dir__}/schemas/simple/v1/SimpleMessage.avsc"))
       stub = stub_request(:post, "http://localhost:8081/subjects/simple/versions")
         .with(body: {"schema" => schema}).to_return_json(body: {id: 15})
       msg = {"name" => "my name"}
@@ -133,7 +139,7 @@ RSpec.describe "encoding" do
     end
 
     it "should encode a complex message with nested record" do
-      schema = File.read("#{__dir__}/schemas/referenced/v1/MessageBA.avsc")
+      schema = avro_registration_text(File.read("#{__dir__}/schemas/referenced/v1/MessageBA.avsc"))
       stub = stub_request(:post, "http://localhost:8081/subjects/referenced/versions")
         .with(body: {"schema" => schema}).to_return_json(body: {id: 20})
       msg = {
@@ -169,7 +175,7 @@ RSpec.describe "encoding" do
       File.write("#{multi_schema_path}/MultiFieldMessage.avsc", schema_json)
 
       stub = stub_request(:post, "http://localhost:8081/subjects/multi/versions")
-        .with(body: {"schema" => schema_json}).to_return_json(body: {id: 25})
+        .with(body: {"schema" => avro_registration_text(schema_json)}).to_return_json(body: {id: 25})
 
       msg = {"name" => "Alice", "age" => 30}
       encoded = schema_registry_client.encode(msg, subject: "multi", schema_name: "test.v1.MultiFieldMessage")
@@ -185,7 +191,7 @@ RSpec.describe "encoding" do
     end
 
     it "should validate schema before encoding" do
-      schema = File.read("#{__dir__}/schemas/simple/v1/SimpleMessage.avsc")
+      schema = avro_registration_text(File.read("#{__dir__}/schemas/simple/v1/SimpleMessage.avsc"))
       stub_request(:post, "http://localhost:8081/subjects/simple/versions")
         .with(body: {"schema" => schema}).to_return_json(body: {id: 15})
 
@@ -323,7 +329,7 @@ RSpec.describe "encoding" do
       end
 
       it "should not register the same schema twice" do
-        schema = File.read("#{__dir__}/schemas/simple/v1/SimpleMessage.avsc")
+        schema = avro_registration_text(File.read("#{__dir__}/schemas/simple/v1/SimpleMessage.avsc"))
         stub = stub_request(:post, "http://localhost:8081/subjects/simple/versions")
           .with(body: {"schema" => schema}).to_return_json(body: {id: 15})
         msg = {"name" => "my name"}
@@ -334,7 +340,7 @@ RSpec.describe "encoding" do
       end
 
       it "should register schemas for different subjects separately" do
-        schema = File.read("#{__dir__}/schemas/simple/v1/SimpleMessage.avsc")
+        schema = avro_registration_text(File.read("#{__dir__}/schemas/simple/v1/SimpleMessage.avsc"))
         stub_a = stub_request(:post, "http://localhost:8081/subjects/subject-a/versions")
           .with(body: {"schema" => schema}).to_return_json(body: {id: 15})
         stub_b = stub_request(:post, "http://localhost:8081/subjects/subject-b/versions")
